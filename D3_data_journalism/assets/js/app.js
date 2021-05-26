@@ -19,7 +19,6 @@ var svg = d3
   .attr("class", "chart");
 
 // Radius for each dot
-
 var circRadius;
 function crGet() {
   if (width <= 550) {
@@ -119,9 +118,7 @@ yText
   .text("Lacks Healthcare (%)");
 
 
-
-
-// Import our CSV data
+// Import CSV data
 d3.csv("assets/data/data.csv").then(function(data) {
   // Visualize the data
   visualize(data);
@@ -130,8 +127,8 @@ d3.csv("assets/data/data.csv").then(function(data) {
 // Visualization function
 function visualize(theData) {
 
-  var curX = "poverty";
-  var curY = "obesity";
+  var X = "poverty";
+  var Y = "obesity";
 
   // Min and max values of x and y
   
@@ -149,15 +146,15 @@ function visualize(theData) {
       // x key
       var theX;
       var theState = "<div>" + d.state + "</div>";
-      var theY = "<div>" + curY + ": " + d[curY] + "%</div>";
-      if (curX === "poverty") {
-        theX = "<div>" + curX + ": " + d[curX] + "%</div>";
+      var theY = "<div>" + Y + ": " + d[Y] + "%</div>";
+      if (X === "poverty") {
+        theX = "<div>" + curX + ": " + d[X] + "%</div>";
       }
       else {
         theX = "<div>" +
-          curX +
+          X +
           ": " +
-          parseFloat(d[curX]).toLocaleString("en") +
+          parseFloat(d[X]).toLocaleString("en") +
           "</div>";
       }
       return theState + theX + theY;
@@ -169,22 +166,22 @@ function visualize(theData) {
   // Adjust min and max for x
   function xMinMax() {
     xMin = d3.min(theData, function(d) {
-      return parseFloat(d[curX]) * 0.90;
+      return parseFloat(d[X]) * 0.90;
     });
 
     xMax = d3.max(theData, function(d) {
-      return parseFloat(d[curX]) * 1.10;
+      return parseFloat(d[X]) * 1.10;
     });
   }
 
   //Adjust min and max for y
   function yMinMax() {
     yMin = d3.min(theData, function(d) {
-      return parseFloat(d[curY]) * 0.90;
+      return parseFloat(d[Y]) * 0.90;
     });
 
     yMax = d3.max(theData, function(d) {
-      return parseFloat(d[curY]) * 1.10;
+      return parseFloat(d[Y]) * 1.10;
     });
   }
 
@@ -199,7 +196,7 @@ function visualize(theData) {
     clickedText.classed("inactive", false).classed("active", true);
   }
 
-  //Instantiate the Scatter Plot
+  //Scatter Plot
 
   xMinMax();
   yMinMax();
@@ -242,197 +239,132 @@ function visualize(theData) {
     .attr("class", "yAxis")
     .attr("transform", "translate(" + (margin + labelArea) + ", 0)");
 
-  // Now let's make a grouping for our dots and their labels.
-  var theCircles = svg.selectAll("g theCircles").data(theData).enter();
+  // Dot labels
+  var Circles = svg.selectAll("g theCircles").data(theData).enter();
 
-  // We append the circles for each row of data (or each state, in this case).
-  theCircles
+  // Append labels
+  Circles
     .append("circle")
-    // These attr's specify location, size and class.
     .attr("cx", function(d) {
-      return xScale(d[curX]);
+      return xScale(d[X]);
     })
     .attr("cy", function(d) {
-      return yScale(d[curY]);
+      return yScale(d[Y]);
     })
     .attr("r", circRadius)
     .attr("class", function(d) {
       return "stateCircle " + d.abbr;
     })
-    // Hover rules
+
+
+    // Hover function
     .on("mouseover", function(d) {
-      // Show the tooltip
       toolTip.show(d, this);
-      // Highlight the state circle's border
       d3.select(this).style("stroke", "#323232");
     })
     .on("mouseout", function(d) {
-      // Remove the tooltip
       toolTip.hide(d);
-      // Remove highlight
       d3.select(this).style("stroke", "#e3e3e3");
     });
 
-  // With the circles on our graph, we need matching labels.
-  // Let's grab the state abbreviations from our data
-  // and place them in the center of our dots.
-  theCircles
+  Circles
     .append("text")
-    // We return the abbreviation to .text, which makes the text the abbreviation.
     .text(function(d) {
       return d.abbr;
     })
-    // Now place the text using our scale.
     .attr("dx", function(d) {
-      return xScale(d[curX]);
+      return xScale(d[X]);
     })
     .attr("dy", function(d) {
-      // When the size of the text is the radius,
-      // adding a third of the radius to the height
-      // pushes it into the middle of the circle.
-      return yScale(d[curY]) + circRadius / 2.5;
+      return yScale(d[Y]) + circRadius / 2.5;
     })
     .attr("font-size", circRadius)
     .attr("class", "stateText")
-    // Hover Rules
-    .on("mouseover", function(d) {
-      // Show the tooltip
-      toolTip.show(d);
-      // Highlight the state circle's border
-      d3.select("." + d.abbr).style("stroke", "#323232");
-    })
-    .on("mouseout", function(d) {
-      // Remove tooltip
-      toolTip.hide(d);
-      // Remove highlight
-      d3.select("." + d.abbr).style("stroke", "#e3e3e3");
-    });
 
-  // Part 4: Make the Graph Dynamic
-  // ==========================
-  // This section will allow the user to click on any label
-  // and display the data it references.
 
-  // Select all axis text and add this d3 click event.
+  // Add Click
   d3.selectAll(".aText").on("click", function() {
-    // Make sure we save a selection of the clicked text,
-    // so we can reference it without typing out the invoker each time.
     var self = d3.select(this);
-
-    // We only want to run this on inactive labels.
-    // It's a waste of the processor to execute the function
-    // if the data is already displayed on the graph.
     if (self.classed("inactive")) {
-      // Grab the name and axis saved in label.
+     
       var axis = self.attr("data-axis");
       var name = self.attr("data-name");
 
-      // When x is the saved axis, execute this:
+      // function
       if (axis === "x") {
-        // Make curX the same as the data name.
         curX = name;
 
-        // Change the min and max of the x-axis
         xMinMax();
-
-        // Update the domain of x.
         xScale.domain([xMin, xMax]);
-
-        // Now use a transition when we update the xAxis.
         svg.select(".xAxis").transition().duration(300).call(xAxis);
 
-        // With the axis changed, let's update the location of the state circles.
+        //location of dots
         d3.selectAll("circle").each(function() {
-          // Each state circle gets a transition for it's new attribute.
-          // This will lend the circle a motion tween
-          // from it's original spot to the new location.
           d3
             .select(this)
             .transition()
             .attr("cx", function(d) {
-              return xScale(d[curX]);
+              return xScale(d[X]);
             })
             .duration(300);
         });
 
-        // We need change the location of the state texts, too.
+        // location of states
         d3.selectAll(".stateText").each(function() {
-          // We give each state text the same motion tween as the matching circle.
           d3
             .select(this)
             .transition()
             .attr("dx", function(d) {
-              return xScale(d[curX]);
+              return xScale(d[X]);
             })
             .duration(300);
         });
 
-        // Finally, change the classes of the last active label and the clicked label.
         labelChange(axis, self);
       }
       else {
-        // When y is the saved axis, execute this:
-        // Make curY the same as the data name.
-        curY = name;
+        Y = name;
 
-        // Change the min and max of the y-axis.
+        // Same for y
         yMinMax();
-
-        // Update the domain of y.
         yScale.domain([yMin, yMax]);
 
-        // Update Y Axis
         svg.select(".yAxis").transition().duration(300).call(yAxis);
 
-        // With the axis changed, let's update the location of the state circles.
+        // location of the states 
         d3.selectAll("circle").each(function() {
-          // Each state circle gets a transition for it's new attribute.
-          // This will lend the circle a motion tween
-          // from it's original spot to the new location.
           d3
             .select(this)
             .transition()
             .attr("cy", function(d) {
-              return yScale(d[curY]);
+              return yScale(d[Y]);
             })
             .duration(300);
         });
 
-        // We need change the location of the state texts, too.
         d3.selectAll(".stateText").each(function() {
-          // We give each state text the same motion tween as the matching circle.
           d3
             .select(this)
             .transition()
             .attr("dy", function(d) {
-              return yScale(d[curY]) + circRadius / 3;
+              return yScale(d[Y]) + circRadius / 3;
             })
             .duration(300);
         });
 
-        // Finally, change the classes of the last active label and the clicked label.
+        // Change labels
         labelChange(axis, self);
       }
     }
   });
 
-  // Part 5: Mobile Responsive
-  // =========================
-  // With d3, we can call a resize function whenever the window dimensions change.
-  // This make's it possible to add true mobile-responsiveness to our charts.
-  d3.select(window).on("resize", resize);
 
-  // One caveat: we need to specify what specific parts of the chart need size and position changes.
+  //Resize chart
   function resize() {
-    // Redefine the width, height and leftTextY (the three variables dependent on the width of the window).
     width = parseInt(d3.select("#scatter").style("width"));
     height = width - width / 3.9;
     leftTextY = (height + labelArea) / 2 - labelArea;
-
-    // Apply the width and height to the svg canvas.
     svg.attr("width", width).attr("height", height);
-
-    // Change the xScale and yScale ranges
     xScale.range([margin + labelArea, width - margin]);
     yScale.range([height - margin - labelArea, margin]);
 
@@ -444,37 +376,36 @@ function visualize(theData) {
 
     svg.select(".yAxis").call(yAxis);
 
-    // Update the ticks on each axis.
-    tickCount();
-
-    // Update the labels.
+    // Labels.
     xTextRefresh();
     yTextRefresh();
 
-    // Update the radius of each dot.
+    // Ticks
+    tickCount();
+
+    // Circle size
     crGet();
 
-    // With the axis changed, let's update the location and radius of the state circles.
+    // Update the location of the state circles and labels.
     d3
       .selectAll("circle")
       .attr("cy", function(d) {
-        return yScale(d[curY]);
+        return yScale(d[Y]);
       })
       .attr("cx", function(d) {
-        return xScale(d[curX]);
+        return xScale(d[X]);
       })
       .attr("r", function() {
         return circRadius;
       });
 
-    // We need change the location and size of the state texts, too.
     d3
       .selectAll(".stateText")
       .attr("dy", function(d) {
-        return yScale(d[curY]) + circRadius / 3;
+        return yScale(d[Y]) + circRadius / 3;
       })
       .attr("dx", function(d) {
-        return xScale(d[curX]);
+        return xScale(d[X]);
       })
       .attr("r", circRadius / 3);
   }
