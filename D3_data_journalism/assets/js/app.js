@@ -62,18 +62,8 @@ function yTextRefresh() {
 }
 yTextRefresh();
 
-// Append SVG
-
-// 1. Poverty
-xText
-  .append("text")
-  .attr("y", -26)
-  .attr("data-name", "poverty")
-  .attr("data-axis", "x")
-  .attr("class", "aText active x")
-  .text("In Poverty (%)");
-
-// 2. Age
+// Append SVG (x-axis)
+// Age
 xText
   .append("text")
   .attr("y", 0)
@@ -82,7 +72,16 @@ xText
   .attr("class", "aText inactive x")
   .text("Age (Median)");
 
-// 3. Income
+// Poverty
+xText
+.append("text")
+.attr("y", -26)
+.attr("data-name", "poverty")
+.attr("data-axis", "x")
+.attr("class", "aText active x")
+.text("In Poverty (%)");
+
+//Income
 xText
   .append("text")
   .attr("y", 26)
@@ -91,8 +90,8 @@ xText
   .attr("class", "aText inactive x")
   .text("Household Income (Median)");
 
-// Append the text
-// 1. Obesity
+// Append y-axis
+//Obesity
 yText
   .append("text")
   .attr("y", -26)
@@ -101,7 +100,7 @@ yText
   .attr("class", "aText active y")
   .text("Obese (%)");
 
-// 2. Smokes
+// Smokes
 yText
   .append("text")
   .attr("x", 0)
@@ -110,7 +109,7 @@ yText
   .attr("class", "aText inactive y")
   .text("Smokes (%)");
 
-// 3. Lacks Healthcare
+//Lacks Healthcare
 yText
   .append("text")
   .attr("y", 26)
@@ -120,27 +119,28 @@ yText
   .text("Lacks Healthcare (%)");
 
 
-// Import our CSV data with d3's .csv import method.
+
+
+// Import our CSV data
 d3.csv("assets/data/data.csv").then(function(data) {
   // Visualize the data
   visualize(data);
 });
 
 // Visualization function
-
 function visualize(theData) {
 
   var curX = "poverty";
   var curY = "obesity";
 
-  // Empty variables for the min and max values of x and y.
+  // Min and max values of x and y
   
   var xMin;
   var xMax;
   var yMin;
   var yMax;
 
-  // This function allows us to set up tooltip rules (see d3-tip.js).
+  // Tooltip
   var toolTip = d3
     .tip()
     .attr("class", "d3-tip")
@@ -148,86 +148,63 @@ function visualize(theData) {
     .html(function(d) {
       // x key
       var theX;
-      // Grab the state name.
       var theState = "<div>" + d.state + "</div>";
-      // Snatch the y value's key and value.
       var theY = "<div>" + curY + ": " + d[curY] + "%</div>";
-      // If the x key is poverty
       if (curX === "poverty") {
-        // Grab the x key and a version of the value formatted to show percentage
         theX = "<div>" + curX + ": " + d[curX] + "%</div>";
       }
       else {
-        // Otherwise
-        // Grab the x key and a version of the value formatted to include commas after every third digit.
         theX = "<div>" +
           curX +
           ": " +
           parseFloat(d[curX]).toLocaleString("en") +
           "</div>";
       }
-      // Display what we capture.
       return theState + theX + theY;
     });
-  // Call the toolTip function.
+
+  // Call toolTip function.
   svg.call(toolTip);
 
-  // PART 2: D.R.Y!
-  // ==============
-  // These functions remove some repitition from later code.
-  // This will be more obvious in parts 3 and 4.
-
-  // a. change the min and max for x
+  // Adjust min and max for x
   function xMinMax() {
-    // min will grab the smallest datum from the selected column.
     xMin = d3.min(theData, function(d) {
       return parseFloat(d[curX]) * 0.90;
     });
 
-    // .max will grab the largest datum from the selected column.
     xMax = d3.max(theData, function(d) {
       return parseFloat(d[curX]) * 1.10;
     });
   }
 
-  // b. change the min and max for y
+  //Adjust min and max for y
   function yMinMax() {
-    // min will grab the smallest datum from the selected column.
     yMin = d3.min(theData, function(d) {
       return parseFloat(d[curY]) * 0.90;
     });
 
-    // .max will grab the largest datum from the selected column.
     yMax = d3.max(theData, function(d) {
       return parseFloat(d[curY]) * 1.10;
     });
   }
 
-  // c. change the classes (and appearance) of label text when clicked.
+  // Change labels
   function labelChange(axis, clickedText) {
-    // Switch the currently active to inactive.
     d3
       .selectAll(".aText")
       .filter("." + axis)
       .filter(".active")
       .classed("active", false)
       .classed("inactive", true);
-
-    // Switch the text just clicked to active.
     clickedText.classed("inactive", false).classed("active", true);
   }
 
-  // Part 3: Instantiate the Scatter Plot
-  // ====================================
-  // This will add the first placement of our data and axes to the scatter plot.
+  //Instantiate the Scatter Plot
 
-  // First grab the min and max values of x and y.
   xMinMax();
   yMinMax();
 
-  // With the min and max values now defined, we can create our scales.
-  // Notice in the range method how we include the margin and word area.
-  // This tells d3 to place our circles in an area starting after the margin and word area.
+  // Scale
   var xScale = d3
     .scaleLinear()
     .domain([xMin, xMax])
@@ -235,16 +212,12 @@ function visualize(theData) {
   var yScale = d3
     .scaleLinear()
     .domain([yMin, yMax])
-    // Height is inverses due to how d3 calc's y-axis placement
     .range([height - margin - labelArea, margin]);
 
-  // We pass the scales into the axis methods to create the axes.
-  // Note: D3 4.0 made this a lot less cumbersome then before. Kudos to mbostock.
   var xAxis = d3.axisBottom(xScale);
   var yAxis = d3.axisLeft(yScale);
 
-  // Determine x and y tick counts.
-  // Note: Saved as a function for easy mobile updates.
+  // Tick count
   function tickCount() {
     if (width <= 500) {
       xAxis.ticks(5);
@@ -257,9 +230,7 @@ function visualize(theData) {
   }
   tickCount();
 
-  // We append the axes in group elements. By calling them, we include
-  // all of the numbers, borders and ticks.
-  // The transform attribute specifies where to place the axes.
+  // Append SVG
   svg
     .append("g")
     .call(xAxis)
